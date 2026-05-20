@@ -35,7 +35,9 @@ services:
       retries: 10
 
   identity-service:
-    build: ./services/identity-service
+    build:
+      context: ./
+      dockerfile: services/identity-service/Dockerfile
     container_name: rental_identity
     restart: unless-stopped
     depends_on:
@@ -58,7 +60,9 @@ services:
       - "3001:3001"
 
   property-service:
-    build: ./services/property-service
+    build:
+      context: ./
+      dockerfile: services/property-service/Dockerfile
     container_name: rental_property
     restart: unless-stopped
     depends_on:
@@ -80,7 +84,9 @@ services:
       - "3002:3002"
 
   rental-service:
-    build: ./services/rental-service
+    build:
+      context: ./
+      dockerfile: services/rental-service/Dockerfile
     container_name: rental_rental
     restart: unless-stopped
     depends_on:
@@ -108,7 +114,9 @@ services:
       - "3003:3003"
 
   messaging-service:
-    build: ./services/messaging-service
+    build:
+      context: ./
+      dockerfile: services/messaging-service/Dockerfile
     container_name: rental_messaging
     restart: unless-stopped
     depends_on:

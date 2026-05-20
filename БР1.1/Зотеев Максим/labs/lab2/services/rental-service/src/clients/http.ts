@@ -1,4 +1,4 @@
-import { HttpError, serviceUnavailable } from "../utils/errors";
+import { HttpError, serviceUnavailable } from "@rental/shared";
 import { config } from "../config";
 
 type Method = "GET" | "POST" | "PUT" | "DELETE" | "PATCH";

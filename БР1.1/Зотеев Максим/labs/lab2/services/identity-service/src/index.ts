@@ -4,7 +4,7 @@ import cors from "cors";
 import { AppDataSource } from "./data-source";
 import { config } from "./config";
 import router from "./routes";
-import { errorHandler } from "./middleware/error";
+import { errorHandler } from "@rental/shared";
 import { connectRabbit } from "./messaging";
 
 const bootstrap = async () => {

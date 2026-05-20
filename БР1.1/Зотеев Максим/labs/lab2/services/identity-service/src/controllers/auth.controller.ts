@@ -2,8 +2,8 @@ import { Request, Response } from "express";
 import { AppDataSource } from "../data-source";
 import { User } from "../entities/User";
 import { hashPassword, verifyPassword } from "../utils/password";
-import { signToken } from "../utils/jwt";
-import { badRequest, conflict, unauthorized } from "../utils/errors";
+import { jwt } from "../auth";
+import { badRequest, conflict, unauthorized } from "@rental/shared";
 import { toUser } from "../utils/mappers";
 import { config } from "../config";
 import { publishEvent } from "../messaging";
@@ -42,7 +42,7 @@ export const register = async (req: Request, res: Response) => {
     occurred_at: new Date().toISOString(),
   });
 
-  const token = signToken({ sub: String(user.id), role: user.role });
+  const token = jwt.sign({ sub: String(user.id), role: user.role });
   res.status(201).json({
     access_token: token,
     token_type: "Bearer",
@@ -58,7 +58,7 @@ export const login = async (req: Request, res: Response) => {
   if (!user || !(await verifyPassword(password, user.passwordHash))) {
     throw unauthorized("Неверный email или пароль");
   }
-  const token = signToken({ sub: String(user.id), role: user.role });
+  const token = jwt.sign({ sub: String(user.id), role: user.role });
   res.json({
     access_token: token,
     token_type: "Bearer",

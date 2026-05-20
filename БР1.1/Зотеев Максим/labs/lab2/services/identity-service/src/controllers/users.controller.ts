@@ -2,13 +2,14 @@ import { Request, Response } from "express";
 import { In } from "typeorm";
 import { AppDataSource } from "../data-source";
 import { User } from "../entities/User";
-import { badRequest, notFound } from "../utils/errors";
+import { badRequest, notFound, parseNumericId } from "@rental/shared";
 import { toUser } from "../utils/mappers";
 
 const repo = () => AppDataSource.getRepository(User);
 
-const loadUser = async (id: string) => {
-  const user = await repo().findOne({ where: { id } });
+const loadUser = async (id: string, name = "userId") => {
+  const safe = parseNumericId(id, name);
+  const user = await repo().findOne({ where: { id: safe } });
   if (!user) throw notFound("Пользователь не найден");
   return user;
 };
@@ -36,6 +37,7 @@ export const getInternalUser = async (req: Request, res: Response) => {
 export const batchGetInternalUsers = async (req: Request, res: Response) => {
   const ids = req.body?.ids;
   if (!Array.isArray(ids) || !ids.length) throw badRequest("ids обязательно, должно быть непустым массивом");
-  const list = await repo().find({ where: { id: In(ids.map(String)) } });
+  const safeIds = ids.map((v) => parseNumericId(String(v), "ids"));
+  const list = await repo().find({ where: { id: In(safeIds) } });
   res.json({ items: list.map(toUser) });
 };

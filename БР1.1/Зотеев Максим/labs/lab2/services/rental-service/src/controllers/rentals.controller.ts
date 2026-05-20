@@ -1,7 +1,7 @@
 import { Request, Response } from "express";
 import { AppDataSource } from "../data-source";
 import { Rental } from "../entities/Rental";
-import { badRequest, conflict, forbidden, HttpError, notFound } from "../utils/errors";
+import { badRequest, conflict, forbidden, HttpError, notFound, parseNumericId } from "@rental/shared";
 import { toRental } from "../utils/mappers";
 import { parsePagination, buildPageResponse } from "../utils/pagination";
 import * as propertyClient from "../clients/property";
@@ -13,8 +13,9 @@ const rentalsRepo = () => AppDataSource.getRepository(Rental);
 const isParticipant = (r: Rental, userId: string) =>
   String(r.tenantId) === userId || String(r.ownerId) === userId;
 
-const loadRental = async (id: string) => {
-  const r = await rentalsRepo().findOne({ where: { id } });
+const loadRental = async (id: string, name = "rentalId") => {
+  const safe = parseNumericId(id, name);
+  const r = await rentalsRepo().findOne({ where: { id: safe } });
   if (!r) throw notFound("Сделка не найдена");
   return r;
 };
@@ -25,7 +26,7 @@ const enrich = async (r: Rental) => {
 };
 
 export const createRental = async (req: Request, res: Response) => {
-  const propertyId = req.params.id;
+  const propertyId = parseNumericId(req.params.id, "propertyId");
   const ctx = await propertyClient.getRentalContext(propertyId);
 
   if (!ctx.is_available) throw badRequest("Объект недоступен для аренды", "not_available");

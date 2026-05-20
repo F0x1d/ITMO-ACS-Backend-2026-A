@@ -1,6 +1,6 @@
 import { Router } from "express";
-import { asyncHandler } from "./middleware/error";
-import { authRequired, internalAuth } from "./middleware/auth";
+import { asyncHandler } from "@rental/shared";
+import { authRequired, internalAuth } from "./auth";
 import * as rentals from "./controllers/rentals.controller";
 import * as internal from "./controllers/internal.controller";
 

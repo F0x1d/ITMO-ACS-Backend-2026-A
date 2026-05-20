@@ -1,13 +1,14 @@
 import { Request, Response } from "express";
 import { AppDataSource } from "../data-source";
 import { Property } from "../entities/Property";
-import { badRequest, conflict, notFound } from "../utils/errors";
+import { badRequest, conflict, notFound, parseNumericId } from "@rental/shared";
 
 const propsRepo = () => AppDataSource.getRepository(Property);
 
 export const getRentalContext = async (req: Request, res: Response) => {
+  const id = parseNumericId(req.params.propertyId, "propertyId");
   const p = await propsRepo().findOne({
-    where: { id: req.params.propertyId },
+    where: { id },
     relations: ["propertyType", "location"],
   });
   if (!p) throw notFound("Объект не найден", "property_not_found");
@@ -36,7 +37,7 @@ export const updateAvailability = async (req: Request, res: Response) => {
     throw badRequest("reason обязателен");
   }
 
-  const id = req.params.propertyId;
+  const id = parseNumericId(req.params.propertyId, "propertyId");
 
   const result = await AppDataSource.query(
     `UPDATE properties

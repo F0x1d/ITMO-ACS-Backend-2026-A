@@ -2,13 +2,19 @@ FROM node:20-alpine
 
 WORKDIR /app
 
-COPY package*.json tsconfig.json ./
-RUN npm install
+COPY package.json package-lock.json* ./
+COPY packages/shared/package.json ./packages/shared/
+COPY services/property-service/package.json ./services/property-service/
 
-COPY src ./src
+RUN npm install --workspaces --include-workspace-root
 
-RUN npm run build
+COPY packages/shared ./packages/shared
+COPY services/property-service ./services/property-service
 
+RUN npm run build -w @rental/shared
+RUN npm run build -w property-service
+
+WORKDIR /app/services/property-service
 EXPOSE 3002
 
 CMD ["node", "dist/index.js"]

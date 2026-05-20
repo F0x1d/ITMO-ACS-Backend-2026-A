@@ -1,7 +1,7 @@
 import { Request, Response } from "express";
 import { AppDataSource } from "../data-source";
 import { Message } from "../entities/Message";
-import { badRequest, forbidden, HttpError, notFound } from "../utils/errors";
+import { badRequest, forbidden, HttpError, notFound, parseNumericId } from "@rental/shared";
 import { toMessage } from "../utils/mappers";
 import { parsePagination, buildPageResponse } from "../utils/pagination";
 import * as rentalClient from "../clients/rental";
@@ -24,10 +24,11 @@ const ensureRentalAccess = async (rentalId: string, userId: string) => {
 };
 
 export const getRentalMessages = async (req: Request, res: Response) => {
-  await ensureRentalAccess(req.params.id, req.user!.sub);
+  const rentalId = parseNumericId(req.params.id, "rentalId");
+  await ensureRentalAccess(rentalId, req.user!.sub);
   const { page, size, skip } = parsePagination(req.query);
   const [rows, total] = await messagesRepo().findAndCount({
-    where: { rentalId: req.params.id },
+    where: { rentalId },
     order: { createdAt: "ASC" },
     skip,
     take: size,
@@ -40,11 +41,12 @@ export const getRentalMessages = async (req: Request, res: Response) => {
 };
 
 export const sendMessage = async (req: Request, res: Response) => {
-  await ensureRentalAccess(req.params.id, req.user!.sub);
+  const rentalId = parseNumericId(req.params.id, "rentalId");
+  await ensureRentalAccess(rentalId, req.user!.sub);
   const { body } = req.body ?? {};
   if (!body || typeof body !== "string" || !body.trim()) throw badRequest("Пустое сообщение", "empty_body");
   const msg = messagesRepo().create({
-    rentalId: req.params.id,
+    rentalId,
     senderId: req.user!.sub,
     kind: "user",
     body,

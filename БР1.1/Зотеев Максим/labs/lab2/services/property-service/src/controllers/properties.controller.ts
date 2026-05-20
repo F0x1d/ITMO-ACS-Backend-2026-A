@@ -8,7 +8,7 @@ import { Amenity } from "../entities/Amenity";
 import { PropertyPhoto } from "../entities/PropertyPhoto";
 import { parsePagination, buildPageResponse } from "../utils/pagination";
 import { toProperty, toPropertyDetail, toPhoto } from "../utils/mappers";
-import { badRequest, forbidden, notFound } from "../utils/errors";
+import { badRequest, forbidden, notFound, parseNumericId } from "@rental/shared";
 
 const propsRepo = () => AppDataSource.getRepository(Property);
 const typesRepo = () => AppDataSource.getRepository(PropertyType);
@@ -89,8 +89,9 @@ export const searchProperties = async (req: Request, res: Response) => {
 };
 
 export const getProperty = async (req: Request, res: Response) => {
+  const id = parseNumericId(req.params.id, "propertyId");
   const p = await propsRepo().findOne({
-    where: { id: req.params.id },
+    where: { id },
     relations: ["propertyType", "location", "amenities", "photos"],
   });
   if (!p) throw notFound("Объект не найден");
@@ -148,8 +149,9 @@ export const createProperty = async (req: Request, res: Response) => {
 };
 
 export const updateProperty = async (req: Request, res: Response) => {
+  const id = parseNumericId(req.params.id, "propertyId");
   const p = await propsRepo().findOne({
-    where: { id: req.params.id },
+    where: { id },
     relations: ["propertyType", "location", "amenities", "photos"],
   });
   if (!p) throw notFound("Объект не найден");
@@ -191,7 +193,8 @@ export const updateProperty = async (req: Request, res: Response) => {
 };
 
 export const deleteProperty = async (req: Request, res: Response) => {
-  const p = await propsRepo().findOne({ where: { id: req.params.id } });
+  const id = parseNumericId(req.params.id, "propertyId");
+  const p = await propsRepo().findOne({ where: { id } });
   if (!p) throw notFound("Объект не найден");
   if (String(p.ownerId) !== req.user!.sub) throw forbidden("Нет прав на удаление этого объекта");
   await propsRepo().remove(p);
@@ -199,7 +202,8 @@ export const deleteProperty = async (req: Request, res: Response) => {
 };
 
 export const addPhoto = async (req: Request, res: Response) => {
-  const p = await propsRepo().findOne({ where: { id: req.params.id } });
+  const id = parseNumericId(req.params.id, "propertyId");
+  const p = await propsRepo().findOne({ where: { id } });
   if (!p) throw notFound("Объект не найден");
   if (String(p.ownerId) !== req.user!.sub) throw forbidden("Нет прав на редактирование");
   const { url, sort_order } = req.body ?? {};
@@ -210,11 +214,13 @@ export const addPhoto = async (req: Request, res: Response) => {
 };
 
 export const deletePhoto = async (req: Request, res: Response) => {
-  const p = await propsRepo().findOne({ where: { id: req.params.id } });
+  const id = parseNumericId(req.params.id, "propertyId");
+  const photoId = parseNumericId(req.params.photoId, "photoId");
+  const p = await propsRepo().findOne({ where: { id } });
   if (!p) throw notFound("Объект не найден");
   if (String(p.ownerId) !== req.user!.sub) throw forbidden("Нет прав на удаление");
   const photo = await photosRepo().findOne({
-    where: { id: req.params.photoId, property: { id: req.params.id } },
+    where: { id: photoId, property: { id } },
   });
   if (!photo) throw notFound("Фото не найдено");
   await photosRepo().remove(photo);

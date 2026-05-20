@@ -1,6 +1,6 @@
 import { Router } from "express";
-import { asyncHandler } from "./middleware/error";
-import { authRequired } from "./middleware/auth";
+import { asyncHandler } from "@rental/shared";
+import { authRequired } from "./auth";
 import * as msgs from "./controllers/messages.controller";
 
 const r = Router();
