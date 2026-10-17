@@ -21,15 +21,19 @@
 
 # Исключённые файлы rsync не трогает и при --delete, поэтому серверные
 # .env, docker-compose.prod.yml и метки сборки переживают синхронизацию.
+# Файлы сравниваются по содержимому, а время изменения не переносится:
+# в свежем клоне (GitHub Actions) у всех файлов новое время, и сравнение
+# по нему пересобирало бы все сервисы на каждом запуске.
 - name: Копирование кода lab2 на сервер
   ansible.posix.synchronize:
     src: "{{ app_src }}"
     dest: "{{ app_dir }}/"
     delete: true
+    checksum: true
+    times: false
+    owner: false
+    group: false
     rsync_opts:
-      # Время изменения каталогов не сравнивается: запись .env и меток сборки
-      # в app_dir меняет его, и без этой опции каждый запуск считался бы изменением.
-      - "--omit-dir-times"
       - "--exclude=node_modules"
       - "--exclude=dist"
       - "--exclude=.env"
@@ -43,14 +47,15 @@
   become: false
   register: app_sync
 
-# Строки вывода rsync имеют вид "<f..t.... services/property-service/src/index.ts"
-# или "*deleting path". Сервис пересобирается, если изменились его файлы;
+# Строки вывода rsync имеют вид "<fcs...... services/property-service/src/index.ts"
+# или "*deleting path"; строки на "." — изменились только атрибуты, они
+# пропускаются. Сервис пересобирается, если изменились его файлы;
 # packages/shared и корневые package*.json входят в образы всех сервисов,
 # кроме api-gateway, который собирается из своего каталога.
 - name: Сервисы, которые нужно пересобрать
   ansible.builtin.set_fact:
     app_build_services: >-
-      {%- set paths = app_sync.stdout_lines | default([]) | map('regex_replace', '^\S+\s+', '') | list -%}
+      {%- set paths = app_sync.stdout_lines | default([]) | reject('match', '\.') | map('regex_replace', '^\S+\s+', '') | list -%}
       {%- set shared_changed = paths | select('match', 'packages/shared/|package(-lock)?\.json$') | list | length > 0 -%}
       {%- set pending = (app_pending_file.content | b64decode | from_json) if app_pending_file.content is defined else [] -%}
       {%- set out = [] -%}

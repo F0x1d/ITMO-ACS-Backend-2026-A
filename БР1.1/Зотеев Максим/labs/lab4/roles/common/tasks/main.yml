@@ -79,3 +79,10 @@
     state: enabled
     default: deny
     direction: incoming
+
+# Отдельный ключ без пароля для GitHub Actions. Добавляется, а не заменяет
+# список ключей: личный ключ из bootstrap.yml остаётся.
+- name: SSH-ключ GitHub Actions для deploy
+  ansible.posix.authorized_key:
+    user: "{{ deploy_user }}"
+    key: "{{ lookup('ansible.builtin.file', 'github-actions.pub') }}"
